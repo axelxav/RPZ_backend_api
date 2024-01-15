@@ -22,7 +22,6 @@ app = Flask(__name__)
 model_svc = load(open('modelSVC_15jan.pkl', 'rb'))
 vectorizer = load(open('vectorizer_15jan.pkl','rb'))
 model_cb = load(open('modelCB_15jan.pkl', 'rb'))
-
 pornography_keywords = [
     'adult film industry', 'porn star', 'adult actress', 'adult actor', 'pornography production', 'erotic photography', 'adult content creator',
     'explicit videos', 'adult entertainment industry', 'adult film awards', 'erotic models', 'adult film director', 'adult film studio',
@@ -108,7 +107,6 @@ pornography_keywords = [
     'jembud', 'chudai', 'https://poophd.com', 'kendra james', 'reagan foxx', 'hazel moore', 'chloe surreal',
     'mommysgirl', 'jerking off', 'poophd', 'mengocok daging hangat', 'cerita dewasa', 'novel dewasa'
 ]
-
 gambling_keywords = [
     'kasino', 'casino', 'taruhan', 'judi', 'poker', 'slot', 'blackjack', 'roulette', 'bandarq', 'dominoqq',
     'sportsbook', 'togel', 'bola tangkas', 'sabung', 'agen judi', 'online betting', 
@@ -275,7 +273,8 @@ def assign_type(row, pornography_keywords, gambling_keywords):
 # Route untuk endpoint prediksi
 @app.route('/predict', methods=['POST'])
 def predict():
-    url = request.form.get('url')
+    data = request.json
+    url = data.get('url')
     
     new_content_svc = fetch_html_content(url)
     new_content_cb = process_url(url, word_list)
@@ -286,14 +285,14 @@ def predict():
         predicted_label_svc = model_svc.predict(new_features)[0]
         svc_proba = np.max(model_svc.predict_proba(new_features)[0])
         predicted_tag = get_tags(predicted_label_svc, new_content_svc)
-        result = {
+        svc_result = {
             'model': 'SVC',
             'label': predicted_label_svc,
             'tag': predicted_tag,
             'probability': svc_proba
         }
     else:
-        result = {
+        svc_result = {
             'error': f"Error fetching URL content: {url}"
         }
 
@@ -302,26 +301,23 @@ def predict():
         predicted_label_cb = model_cb.predict([new_features])[0]
         cb_proba = np.max(model_cb.predict_proba([new_features])[0])
         predicted_type = assign_type(new_content_cb, pornography_keywords, gambling_keywords)
-        if svc_proba > cb_proba:
-            result = {
-                'model': 'SVC',
-                'label': predicted_label_svc,
-                'tag': predicted_tag,
-                'probability': svc_proba
-            }
-        elif cb_proba > svc_proba:
-            result = {
-                'model': 'CB',
-                'label': predicted_label_cb,
-                'type': predicted_type,
-                'probability': cb_proba
-            }
+        cb_result = {
+            'model': 'CB',
+            'label': predicted_label_cb,
+            'type': predicted_type,
+            'probability': cb_proba
+        }
     else:
-        result = {
+        cb_result = {
             'error': f"Error fetching URL content: {url}"
         }
 
-    return result
+    result = {
+        'SVC': svc_result,
+        'CB': cb_result
+    }
+
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
