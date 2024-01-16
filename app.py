@@ -287,7 +287,7 @@ def predict():
         svc_result = {
             'model': 'SVC',
             'label': str(predicted_label_svc),
-            'tag': predicted_tag,
+            'type': predicted_tag,
             'probability': svc_proba
         }
     else:
