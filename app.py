@@ -12,16 +12,19 @@ from sklearn.metrics import classification_report, confusion_matrix
 from joblib import load
 from requests.exceptions import Timeout
 from urllib.parse import urlparse, urljoin
+import urllib3
 import tldextract
 from catboost import CatBoostClassifier
 import csv
 
 app = Flask(__name__)
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Inisialisasi model dan vectorizer
-model_svc = load(open('modelSVC_15jan.pkl', 'rb'))
-vectorizer = load(open('vectorizer_15jan.pkl','rb'))
-model_cb = load(open('modelCB_15jan.pkl', 'rb'))
+model_svc = load(open('modelSVC_16jan.pkl', 'rb'))
+vectorizer = load(open('vectorizer_16jan.pkl','rb'))
+model_cb = load(open('modelCB_16jan.pkl', 'rb'))
 pornography_keywords = [
     'adult film industry', 'porn star', 'adult actress', 'adult actor', 'pornography production', 'erotic photography', 'adult content creator',
     'explicit videos', 'adult entertainment industry', 'adult film awards', 'erotic models', 'adult film director', 'adult film studio',
@@ -186,7 +189,7 @@ gambling_keywords = [
     'joker gaming', 'agen bola terbesar'
 ]
 
-word_list = load(open('modelCB_columns_15jan.pkl', 'rb'))
+word_list = load(open('modelCB_columns_16jan.pkl', 'rb'))
 
 # Fungsi untuk mengambil konten HTML dari URL
 def fetch_html_content(url):
@@ -287,7 +290,7 @@ def predict():
         predicted_tag = get_tags(predicted_label_svc, new_content_svc)
         svc_result = {
             'model': 'SVC',
-            'label': predicted_label_svc,
+            'label': str(predicted_label_svc),
             'tag': predicted_tag,
             'probability': svc_proba
         }
@@ -303,7 +306,7 @@ def predict():
         predicted_type = assign_type(new_content_cb, pornography_keywords, gambling_keywords)
         cb_result = {
             'model': 'CB',
-            'label': predicted_label_cb,
+            'label': str(predicted_label_cb),
             'type': predicted_type,
             'probability': cb_proba
         }
@@ -317,7 +320,16 @@ def predict():
         'CB': cb_result
     }
 
-    return jsonify(result)
+    if svc_proba > cb_proba:
+        return jsonify(result['SVC'])
+    else:
+        return jsonify(result['CB'])
+
+    # return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+@app.route('/', methods=['POST'])
+def hello_world():
+    return 'Hello World! ngetest hehehe'
