@@ -6,14 +6,10 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import classification_report, confusion_matrix
 from joblib import load
 from requests.exceptions import Timeout
 from urllib.parse import urlparse, urljoin
 import urllib3
-import tldextract
 from catboost import CatBoostClassifier
 import csv
 
